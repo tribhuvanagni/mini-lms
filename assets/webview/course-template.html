@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Course Content</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #6366f1;
+      --accent: #f59e0b;
+      --success: #22c55e;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .header { margin-bottom: 24px; }
+    .category {
+      display: inline-block;
+      background: rgba(99, 102, 241, 0.2);
+      color: var(--primary);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    h1 { font-size: 22px; font-weight: 700; line-height: 1.3; margin-bottom: 8px; }
+    .meta { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+    .progress-wrap { margin-bottom: 24px; }
+    .progress-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .progress-bar { height: 6px; background: var(--surface); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--primary); border-radius: 3px; transition: width 0.4s; }
+    .section {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .section.done { border-color: var(--success); }
+    .section-header { display: flex; align-items: center; justify-content: space-between; }
+    .section-title { font-size: 15px; font-weight: 600; }
+    .section-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; }
+    .section.done .section-check { background: var(--success); border-color: var(--success); color: #fff; }
+    .section-body { font-size: 13px; color: var(--muted); margin-top: 10px; line-height: 1.6; display: none; }
+    .section.open .section-body { display: block; }
+    .desc { color: var(--muted); font-size: 14px; line-height: 1.7; margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="category" id="category">Loading...</div>
+    <h1 id="title">Loading course...</h1>
+    <div class="meta" id="meta"></div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label" id="progress-label">Progress: 0%</div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+
+  <p class="desc" id="desc"></p>
+  <div id="sections"></div>
+
+  <script>
+    const post = (msg) => window.ReactNativeWebView?.postMessage(JSON.stringify(msg));
+    const completed = new Set();
+
+    const SECTIONS = [
+      { title: 'Introduction', body: 'Overview of what you\'ll learn in this course and how to get the most out of it.' },
+      { title: 'Core concepts', body: 'The fundamental ideas you need to understand before moving forward.' },
+      { title: 'Hands-on practice', body: 'Apply what you\'ve learned with guided exercises and real-world examples.' },
+      { title: 'Advanced techniques', body: 'Take your skills further with more advanced patterns and approaches.' },
+      { title: 'Final project', body: 'Put everything together to build something you can be proud of.' },
+    ];
+
+    function renderSections(initialProgress) {
+      const container = document.getElementById('sections');
+      const preCompleted = Math.floor((initialProgress / 100) * SECTIONS.length);
+
+      SECTIONS.forEach((s, i) => {
+        const el = document.createElement('div');
+        el.className = 'section' + (i < preCompleted ? ' done' : '');
+        el.innerHTML =
+          '<div class="section-header">' +
+            '<span class="section-title">' + s.title + '</span>' +
+            '<span class="section-check">' + (i < preCompleted ? '✓' : '') + '</span>' +
+          '</div>' +
+          '<div class="section-body">' + s.body + '<br><br>' +
+            (i >= preCompleted ? '<button onclick="markDone(' + i + ')" style="margin-top:8px;background:#6366f1;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer">Mark complete</button>' : '') +
+          '</div>';
+        if (i < preCompleted) completed.add(i);
+        el.addEventListener('click', function() { el.classList.toggle('open'); });
+        container.appendChild(el);
+      });
+    }
+
+    window.markDone = function(idx) {
+      if (completed.has(idx)) return;
+      completed.add(idx);
+      var sections = document.querySelectorAll('.section');
+      sections[idx].classList.add('done');
+      sections[idx].querySelector('.section-check').textContent = '✓';
+      var btn = sections[idx].querySelector('button');
+      if (btn) btn.remove();
+      post({ type: 'SECTION_COMPLETE', sectionIdx: idx });
+      updateProgress();
+    };
+
+    function updateProgress() {
+      var pct = Math.round((completed.size / SECTIONS.length) * 100);
+      document.getElementById('progress-fill').style.width = pct + '%';
+      document.getElementById('progress-label').textContent = 'Progress: ' + pct + '%';
+    }
+
+    var lastPct = 0;
+    window.addEventListener('scroll', function() {
+      var el = document.documentElement;
+      var pct = Math.round((el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100);
+      if (Math.abs(pct - lastPct) >= 10) {
+        lastPct = pct;
+        post({ type: 'SCROLL_PROGRESS', percent: pct });
+      }
+    });
+
+    document.addEventListener('course-data-ready', function() {
+      var c = window.__COURSE__;
+      if (!c) return;
+      document.getElementById('title').textContent = c.title || 'Course';
+      document.getElementById('desc').textContent = c.description || '';
+      document.getElementById('meta').textContent = 'By ' + (c.instructor || 'Unknown') + ' · ★ ' + (c.rating ? c.rating.toFixed(1) : '?');
+      document.getElementById('category').textContent = c.category || 'Course';
+      renderSections(c.progress || 0);
+      updateProgress();
+      post({ type: 'READY' });
+    });
+
+    if (window.__COURSE__) document.dispatchEvent(new Event('course-data-ready'));
+  </script>
+</body>
+</html>
