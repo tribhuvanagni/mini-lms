@@ -67,7 +67,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       } else if (status === 401) {
         message = 'Incorrect password. Please try again.';
       } else if (status === 404) {
-        message = 'No account found with this email. Please create a new account.';
+        message = 'Account not found. The test database may have reset. Please Create a New Account.';
       } else if (status === 400) {
         message = 'Invalid email or password. Please check your details.';
       } else if (status === 429) {
