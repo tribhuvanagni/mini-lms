@@ -1,89 +1,47 @@
-import axios from 'axios';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ENV } from '@/constants/env';
-import { storage } from '@/services/storage';
 import { logger } from '@/utils/logger';
+import { storage } from './storage';
+import type { Course } from '@/types/course';
 
-export interface Recommendation {
-  title: string;
-  reason: string;
-}
+const CACHE_KEY_PREFIX = 'ai_rec_v1_';
+const CACHE_EXPIRY = 60 * 60 * 1000; // 1 hour
 
-const CACHE_PREFIX = 'ai_recs_';
-
-/**
- * Get AI-powered course recommendations using Google Gemini (FREE tier).
- *
- * Free tier: 15 requests/min, 1M tokens/month — more than enough for a demo.
- * Get your free key at: https://aistudio.google.com/apikey
- */
-export async function getRecommendations(
-  courseId: string,
-  title: string,
-  category: string
-): Promise<Recommendation[]> {
-  if (!ENV.GEMINI_API_KEY) return [];
-
-  // check cache first
-  const cached = await storage.get<Recommendation[]>(`${CACHE_PREFIX}${courseId}`);
-  if (cached?.length) return cached;
-
+export async function getRecommendations(userInterests: string[], allCourses: Course[]): Promise<string> {
+  const cacheKey = `${CACHE_KEY_PREFIX}${userInterests.sort().join('_')}`;
+  
   try {
-    const { data } = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${ENV.GEMINI_API_KEY}`,
-      {
-        contents: [
-          {
-            parts: [
-              {
-                text: `You are a course recommendation engine. Given a course title and category, suggest 3 related courses a student might enjoy.
+    // Check local cache first to save Gemini quota
+    const cachedData = await storage.get(cacheKey) as { text: string; timestamp: number } | null;
+    if (cachedData && Date.now() - cachedData.timestamp < CACHE_EXPIRY) {
+      logger.log('[AI] Using cached recommendations');
+      return cachedData.text;
+    }
 
-Course: ${title}
-Category: ${category}
+    const genAI = new GoogleGenerativeAI(ENV.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-Return ONLY a JSON array of objects with "title" and "reason" keys. Keep reasons under 15 words. No markdown, no explanation, just the JSON array.
+    const prompt = `
+      You are an expert education advisor for "Mini LMS".
+      User interests: ${userInterests.join(', ')}
+      
+      Available courses:
+      ${allCourses.map(c => `- ${c.title} (Category: ${c.category}, ID: ${c.id})`).join('\n')}
 
-Example format:
-[{"title":"Course Name","reason":"Short reason here"}]`,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 800,
-          responseMimeType: "application/json",
-        },
-      },
-      {
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 10_000,
-      }
-    );
+      Task: Recommend exactly 3 courses from the list above that best match the user's interests.
+      Explain WHY in one short, exciting sentence.
+      Format: "Course Title: Explanation"
+    `;
 
-    const content = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '[]';
-    // When responseMimeType is application/json, it returns raw JSON.
-    // We still strip markdown fences just in case the model ignores the instruction.
-    const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+
+    // Store in cache for 1 hour
+    await storage.set(cacheKey, { text, timestamp: Date.now() });
     
-    let parsed: Recommendation[] = [];
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch (parseError) {
-      logger.warn('Failed to parse AI response:', cleaned);
-      throw new Error('AI returned invalid format. Please try again.');
-    }
-
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      await storage.set(`${CACHE_PREFIX}${courseId}`, parsed);
-      return parsed;
-    }
-    return [];
-  } catch (err: any) {
-    logger.warn('AI recommendations failed:', err);
-    // Return the actual error message so we can see it on screen
-    return [{
-      title: "API Error Details",
-      reason: err?.response?.data?.error?.message || err?.message || String(err)
-    }];
+    return text;
+  } catch (error) {
+    logger.error('AI Recommendations failed:', error);
+    throw error;
   }
 }
