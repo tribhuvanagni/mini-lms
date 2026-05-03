@@ -64,11 +64,9 @@ beforeEach(() => {
 
 describe('authStore', () => {
   describe('hydrate', () => {
-    it('sets isAuthenticated when token exists and currentUser succeeds', async () => {
+    it('sets state from local storage when token exists', async () => {
       (secureStorage.get as jest.Mock).mockResolvedValue('valid-token');
-      (authApi.currentUser as jest.Mock).mockResolvedValue({
-        data: { data: mockUser },
-      });
+      (storage.get as jest.Mock).mockResolvedValue(mockUser);
 
       await useAuthStore.getState().hydrate();
 
@@ -76,7 +74,8 @@ describe('authStore', () => {
       expect(state.isAuthenticated).toBe(true);
       expect(state.user).toEqual(mockUser);
       expect(state.isHydrating).toBe(false);
-      expect(storage.set).toHaveBeenCalledWith('user_profile_v1', mockUser);
+      // Fast hydration should NOT call the API on startup
+      expect(authApi.currentUser).not.toHaveBeenCalled();
     });
 
     it('stays unauthenticated when no token', async () => {
@@ -88,19 +87,6 @@ describe('authStore', () => {
       expect(state.isAuthenticated).toBe(false);
       expect(state.isHydrating).toBe(false);
       expect(authApi.currentUser).not.toHaveBeenCalled();
-    });
-
-    it('calls logout when currentUser throws', async () => {
-      (secureStorage.get as jest.Mock).mockResolvedValue('expired-token');
-      (authApi.currentUser as jest.Mock).mockRejectedValue(new Error('401'));
-      (authApi.logout as jest.Mock).mockResolvedValue(undefined);
-
-      await useAuthStore.getState().hydrate();
-
-      const state = useAuthStore.getState();
-      expect(state.isAuthenticated).toBe(false);
-      expect(state.user).toBeNull();
-      expect(secureStorage.remove).toHaveBeenCalledWith('auth_access_token');
     });
   });
 
@@ -126,11 +112,13 @@ describe('authStore', () => {
     });
 
     it('sets error and throws on API failure', async () => {
-      (authApi.login as jest.Mock).mockRejectedValue(new Error('bad creds'));
+      const error = new Error('401');
+      (error as any).response = { status: 401 };
+      (authApi.login as jest.Mock).mockRejectedValue(error);
 
       await expect(
         useAuthStore.getState().login({ email: 'bad@email.com', password: 'wrong' })
-      ).rejects.toThrow();
+      ).rejects.toThrow('401');
 
       expect(useAuthStore.getState().error).toBeTruthy();
       expect(useAuthStore.getState().isAuthenticated).toBe(false);
