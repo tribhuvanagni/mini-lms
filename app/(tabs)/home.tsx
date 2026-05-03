@@ -120,15 +120,21 @@ export default function Home() {
               </Text>
             </LinearGradient>
             
-            <View style={{ paddingHorizontal: 16, marginTop: -25, marginBottom: 8 }}>
+            {/* AI Top Picks — above search so they appear near the top of the feed */}
+            {!debouncedQuery.trim() ? <HomeAIRecommendations /> : null}
+
+            <View
+              style={{
+                paddingHorizontal: 16,
+                marginTop: debouncedQuery.trim() ? -25 : 8,
+                marginBottom: 8,
+              }}
+            >
               <SearchBar value={query} onChange={handleSearchChange} />
               {error ? (
                 <Text style={{ color: '#ef4444', fontSize: 14, marginBottom: 12 }}>{error}</Text>
               ) : null}
             </View>
-            
-            {/* AI Top Picks */}
-            {!debouncedQuery.trim() && <HomeAIRecommendations />}
           </View>
         }
         ListEmptyComponent={<EmptyState query={debouncedQuery} />}

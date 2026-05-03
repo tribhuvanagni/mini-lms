@@ -1,47 +1,76 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getRecommendations, type Recommendation } from '@/services/aiRecommendations';
 import { useCourseStore } from '@/store/courseStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { findCourseBySuggestedTitle } from '@/utils/courseMatch';
+
+const HOME_REC_SLOT_MS = 15 * 60 * 1000;
 
 export function HomeAIRecommendations() {
   const router = useRouter();
   const colors = useThemeColors();
   const courses = useCourseStore(s => s.courses);
+  const homeAiRecNonce = useCourseStore(s => s.homeAiRecNonce);
   const [recs, setRecs] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
+  const slotRef = useRef(Math.floor(Date.now() / HOME_REC_SLOT_MS));
+  const [homeRecSlot, setHomeRecSlot] = useState(slotRef.current);
 
   useEffect(() => {
+    const id = setInterval(() => {
+      const s = Math.floor(Date.now() / HOME_REC_SLOT_MS);
+      if (s !== slotRef.current) {
+        slotRef.current = s;
+        setHomeRecSlot(s);
+      }
+    }, 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (courses.length === 0) {
+      setRecs([]);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
     async function fetchRecs() {
-      // Find a bookmarked course to base recommendations on, or just use the first course
-      const baseCourse = courses.find(c => c.isBookmarked) || courses[0];
-      
-      if (!baseCourse) {
+      const bookmarked = courses.filter(c => c.isBookmarked);
+      const pivot = (homeAiRecNonce + homeRecSlot) % Math.max(1, bookmarked.length || courses.length);
+      const anchor =
+        bookmarked.length > 0 ? bookmarked[pivot % bookmarked.length] : courses[pivot % courses.length];
+      if (!anchor) {
         setLoading(false);
         return;
       }
 
+      setLoading(true);
       try {
-        // We use a special cache key for the home page based on the base course category
-        const results = await getRecommendations(
-          `home_${baseCourse.category}`,
-          `Trending in ${baseCourse.category}`, 
-          baseCourse.category
-        );
-        setRecs(results);
+        const interestTags = [
+          anchor.category,
+          ...bookmarked.map(c => c.category),
+        ];
+        const uniqueTags = [...new Set(interestTags.filter(Boolean))];
+        const results = await getRecommendations(uniqueTags, courses, { refreshNonce: homeAiRecNonce });
+        if (!cancelled) setRecs(results);
       } catch (err) {
         console.error('Home AI Recs error:', err);
+        if (!cancelled) setRecs([]);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
-    
-    if (courses.length > 0) {
-      fetchRecs();
-    }
-  }, [courses]);
+
+    fetchRecs();
+    return () => {
+      cancelled = true;
+    };
+  }, [courses, homeAiRecNonce, homeRecSlot]);
 
   if (loading) {
     return (
@@ -85,14 +114,8 @@ export function HomeAIRecommendations() {
             key={idx}
             activeOpacity={0.8}
             onPress={() => {
-              // Try to find a matching course in our local DB, otherwise just show a toast or search
-              const match = courses.find(c => {
-                const keyword = rec.title.toLowerCase().split(' ')[0] || '';
-                return c.title.toLowerCase().includes(keyword);
-              });
-              if (match) {
-                router.push(`/course/${match.id}` as any);
-              }
+              const match = findCourseBySuggestedTitle(courses, rec.title);
+              if (match) router.push(`/course/${match.id}` as any);
             }}
             style={{
               width: 260,

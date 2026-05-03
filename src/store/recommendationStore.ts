@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { getSimilarCourses, type Recommendation } from '@/services/aiRecommendations';
+import { useCourseStore } from '@/store/courseStore';
 
 interface RecommendationState {
   recommendations: Map<string, Recommendation[]>;
@@ -13,16 +14,23 @@ export const useRecommendationStore = create<RecommendationState>((set, get) => 
 
   fetchRecommendations: async (courseId, title, category) => {
     const { recommendations, loading } = get();
-    if (recommendations.has(courseId) || loading.has(courseId)) return;
+    const cached = recommendations.get(courseId);
+    if (cached !== undefined && cached.length > 0) return;
+    if (loading.has(courseId)) return;
 
     const nextLoading = new Set(loading);
     nextLoading.add(courseId);
     set({ loading: nextLoading });
 
     try {
-      const recs = await getSimilarCourses(courseId, title, category);
+      const courses = useCourseStore.getState().courses;
+      const recs = await getSimilarCourses(courseId, title, category, courses);
       const nextRecs = new Map(get().recommendations);
-      if (recs.length) nextRecs.set(courseId, recs);
+      nextRecs.set(courseId, recs);
+      set({ recommendations: nextRecs });
+    } catch {
+      const nextRecs = new Map(get().recommendations);
+      nextRecs.set(courseId, []);
       set({ recommendations: nextRecs });
     } finally {
       const doneLoading = new Set(get().loading);

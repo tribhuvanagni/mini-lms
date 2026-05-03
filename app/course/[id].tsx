@@ -10,6 +10,7 @@ import { useRecommendationStore } from '@/store/recommendationStore';
 import { RecommendationCard } from '@/components/RecommendationCard';
 import { Skeleton } from '@/components/SkeletonLoader';
 import { useThemeColors, useIsDark } from '@/hooks/useThemeColors';
+import { findCourseBySuggestedTitle } from '@/utils/courseMatch';
 
 const FALLBACK_IMAGE = 'https://via.placeholder.com/600x400/1E293B/FFFFFF?text=Course';
 
@@ -20,7 +21,8 @@ export default function CourseDetail() {
   const course = courses.find(c => c.id === id);
 
   const { recommendations, loading: recsLoading, fetchRecommendations } = useRecommendationStore();
-  const recs = id ? recommendations.get(id) ?? [] : [];
+  const recs = id ? recommendations.get(id) : undefined;
+  const hasLoadedRecs = Boolean(id && recommendations.has(id));
   const isRecsLoading = id ? recsLoading.has(id) : false;
 
   const [enrollAnim] = useState(new Animated.Value(1));
@@ -166,19 +168,36 @@ export default function CourseDetail() {
             />
           </View>
 
-          {/* AI recommendations */}
-          {(isRecsLoading || recs.length > 0) && (
+          {/* AI recommendations (below actions) */}
+          {(isRecsLoading || hasLoadedRecs) && (
             <View style={{ marginTop: 40 }}>
-              <Text style={{ color: colors.text, fontSize: 20, fontWeight: '700', marginBottom: 16 }}>Recommended for you</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                <Text style={{ fontSize: 20, marginRight: 8 }}>✨</Text>
+                <Text style={{ color: colors.text, fontSize: 20, fontWeight: '700' }}>Recommended for you</Text>
+              </View>
               {isRecsLoading ? (
                 <View style={{ gap: 12 }}>
                   <Skeleton height={72} borderRadius={16} />
                   <Skeleton height={72} borderRadius={16} />
                 </View>
+              ) : !recs?.length ? (
+                <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20 }}>
+                  No suggestions yet. Set <Text style={{ fontWeight: '600' }}>EXPO_PUBLIC_GEMINI_API_KEY</Text> in{' '}
+                  <Text style={{ fontWeight: '600' }}>.env</Text> and reload, or try again later.
+                </Text>
               ) : (
-                recs.map((rec, idx) => (
-                  <RecommendationCard key={idx} title={rec.title} reason={rec.reason} />
-                ))
+                recs.map((rec, idx) => {
+                  const match = findCourseBySuggestedTitle(courses, rec.title);
+                  const canOpen = match && match.id !== course.id;
+                  return (
+                    <RecommendationCard
+                      key={`${rec.title}-${idx}`}
+                      title={rec.title}
+                      reason={rec.reason}
+                      onPress={canOpen ? () => router.push(`/course/${match!.id}` as any) : undefined}
+                    />
+                  );
+                })
               )}
             </View>
           )}

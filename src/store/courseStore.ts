@@ -14,6 +14,8 @@ interface CourseState {
   isRefreshing: boolean;
   error: string | null;
   lastFetched: number | null;
+  /** Bumped on catalog refresh so home AI picks are recomputed. */
+  homeAiRecNonce: number;
 }
 
 interface CourseActions {
@@ -37,6 +39,7 @@ export const useCourseStore = create<CourseState & CourseActions>((set, get) => 
   isRefreshing: false,
   error: null,
   lastFetched: null,
+  homeAiRecNonce: 0,
 
   hydrate: async () => {
     let bSet = new Set<string>();
@@ -106,8 +109,14 @@ export const useCourseStore = create<CourseState & CourseActions>((set, get) => 
 
   refreshCourses: async () => {
     set({ isRefreshing: true });
-    await get().fetchCourses(true);
-    set({ isRefreshing: false });
+    try {
+      await get().fetchCourses(true);
+    } finally {
+      set(s => ({
+        isRefreshing: false,
+        homeAiRecNonce: s.homeAiRecNonce + 1,
+      }));
+    }
   },
 
   toggleBookmark: (id) => {

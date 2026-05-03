@@ -12,6 +12,7 @@ import { useCourseStore } from '@/store/courseStore';
 import { usePrefsStore } from '@/store/prefsStore';
 import { useNotifications } from '@/hooks/useNotifications';
 import { ThreeSplash } from '@/components/ThreeSplash';
+import { logger } from '@/utils/logger';
 
 import { SplashScreen } from 'expo-router';
 

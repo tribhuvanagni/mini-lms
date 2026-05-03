@@ -28,7 +28,7 @@ async function runTest() {
     console.log('HOME RESULT:', homeRecs);
 
     console.log('\nTesting Similar Courses (Details Page)...');
-    const simRecs = await getSimilarCourses('1', 'The Complete Python Bootcamp', 'Programming');
+    const simRecs = await getSimilarCourses('1', 'The Complete Python Bootcamp', 'Programming', mockCourses as any);
     console.log('DETAILS RESULT:', JSON.stringify(simRecs, null, 2));
 
     console.log('\n--- TEST SUCCESSFUL ---');
