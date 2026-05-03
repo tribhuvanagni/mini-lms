@@ -38,7 +38,7 @@ function AppContent() {
           hydrate(),
         ]);
       } catch (err) {
-        console.error('Initialization error:', err);
+        logger.error('Initialization error:', err);
       } finally {
         setAppReady(true);
         SplashScreen.hideAsync();
