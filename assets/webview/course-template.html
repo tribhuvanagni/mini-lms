@@ -11,54 +11,73 @@
       --border: #334155;
       --text: #f8fafc;
       --muted: #94a3b8;
-      --primary: #6366f1;
+      --primary: #4F46E5;
       --accent: #f59e0b;
       --success: #22c55e;
-      --radius: 12px;
+      --radius: 16px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
-      padding: 20px;
-      font-size: 15px;
+      padding: 24px;
+      font-size: 16px;
       line-height: 1.6;
     }
-    .header { margin-bottom: 24px; }
+    .header { margin-bottom: 32px; }
     .category {
       display: inline-block;
-      background: rgba(99, 102, 241, 0.2);
-      color: var(--primary);
-      padding: 4px 12px;
+      background: rgba(79, 70, 229, 0.2);
+      color: #818cf8;
+      padding: 6px 14px;
       border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 16px;
     }
-    h1 { font-size: 22px; font-weight: 700; line-height: 1.3; margin-bottom: 8px; }
-    .meta { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
-    .progress-wrap { margin-bottom: 24px; }
-    .progress-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-    .progress-bar { height: 6px; background: var(--surface); border-radius: 3px; overflow: hidden; }
-    .progress-fill { height: 100%; background: var(--primary); border-radius: 3px; transition: width 0.4s; }
+    h1 { font-size: 26px; font-weight: 800; line-height: 1.3; margin-bottom: 12px; }
+    .meta { color: var(--muted); font-size: 14px; font-weight: 500; margin-bottom: 24px; }
+    .progress-wrap { margin-bottom: 32px; background: var(--surface); padding: 16px; border-radius: var(--radius); }
+    .progress-label { font-size: 14px; color: var(--text); font-weight: 600; margin-bottom: 10px; display: flex; justify-content: space-between; }
+    .progress-bar { height: 8px; background: #334155; border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #4F46E5, #8B5CF6); border-radius: 4px; transition: width 0.5s ease; }
+    
     .section {
       background: var(--surface);
       border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
       border: 1px solid var(--border);
-      cursor: pointer;
-      transition: border-color 0.2s;
+      transition: all 0.2s ease;
     }
-    .section.done { border-color: var(--success); }
-    .section-header { display: flex; align-items: center; justify-content: space-between; }
-    .section-title { font-size: 15px; font-weight: 600; }
-    .section-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; }
+    .section.done { border-color: var(--success); background: rgba(34, 197, 94, 0.05); }
+    .section-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+    .section-title { font-size: 18px; font-weight: 700; color: var(--text); }
+    .section-check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; transition: all 0.2s; }
     .section.done .section-check { background: var(--success); border-color: var(--success); color: #fff; }
-    .section-body { font-size: 13px; color: var(--muted); margin-top: 10px; line-height: 1.6; display: none; }
-    .section.open .section-body { display: block; }
-    .desc { color: var(--muted); font-size: 14px; line-height: 1.7; margin-bottom: 24px; }
+    .section-body { font-size: 15px; color: #cbd5e1; margin-top: 16px; line-height: 1.8; display: none; }
+    .section.open .section-body { display: block; animation: fadeIn 0.3s ease; }
+    
+    .section-body img { width: 100%; border-radius: 12px; margin: 16px 0; border: 1px solid var(--border); }
+    .section-body code { background: #0f172a; padding: 4px 8px; border-radius: 6px; font-family: monospace; color: #38bdf8; font-size: 14px; border: 1px solid var(--border); }
+    .section-body pre { background: #0f172a; padding: 16px; border-radius: 12px; overflow-x: auto; margin: 16px 0; border: 1px solid var(--border); }
+    .section-body pre code { background: none; padding: 0; border: none; color: #e2e8f0; }
+
+    .btn-complete {
+      margin-top: 24px;
+      background: linear-gradient(90deg, #4F46E5, #8B5CF6);
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
@@ -69,54 +88,106 @@
   </div>
 
   <div class="progress-wrap">
-    <div class="progress-label" id="progress-label">Progress: 0%</div>
+    <div class="progress-label"><span>Course Progress</span> <span id="progress-label">0%</span></div>
     <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
   </div>
 
-  <p class="desc" id="desc"></p>
   <div id="sections"></div>
 
   <script>
     const post = (msg) => window.ReactNativeWebView?.postMessage(JSON.stringify(msg));
     const completed = new Set();
 
+    function generateContent(courseTitle, sectionIdx) {
+      const isCode = courseTitle.toLowerCase().includes('python') || courseTitle.toLowerCase().includes('java') || courseTitle.toLowerCase().includes('react');
+      
+      const contents = [
+        // Intro
+        `<p>Welcome to <strong>${courseTitle}</strong>. In this comprehensive module, we will explore the foundational elements and set up our environment. By the end of this section, you'll have a clear roadmap of what we are building.</p>
+         <img src="https://source.unsplash.com/800x400/?setup,computer&sig=${sectionIdx}" alt="Setup" />
+         <p>Make sure you have all prerequisites installed. We recommend setting aside 30 minutes of uninterrupted time to grasp these concepts fully.</p>`,
+         
+        // Core Concepts
+        `<p>Now that we're set up, let's dive into the core concepts. Understanding the underlying architecture is critical.</p>
+         ${isCode ? `<pre><code>// Example Architecture Definition\nfunction initializeSystem() {\n  console.log("Core initialized");\n  return true;\n}</code></pre>` : `<p>Review the standard principles before moving on to the hands-on practice. The key takeaway here is structural consistency.</p>`}
+         <p>Take notes during this section, as these principles will be tested in the final project.</p>`,
+         
+        // Hands-on
+        `<p>Time to get your hands dirty! Theory is great, but application is where learning happens.</p>
+         <img src="https://source.unsplash.com/800x400/?working,developer&sig=${sectionIdx}" alt="Working" />
+         <p>Follow along with the exercise files provided. Try to build the component yourself before looking at the solution.</p>`,
+         
+        // Advanced
+        `<p>You've mastered the basics. Let's look at advanced optimizations and edge cases.</p>
+         ${isCode ? `<p>Performance is key. We'll be using <code>memoization</code> and asynchronous state management to keep our application fast.</p>` : `<p>We will now explore strategic scaling and complex problem-solving techniques used by industry leaders.</p>`}`,
+         
+        // Final
+        `<p>Congratulations on reaching the final project! This is where you bring everything together into a portfolio-ready asset.</p>
+         <img src="https://source.unsplash.com/800x400/?success,award&sig=${sectionIdx}" alt="Success" />
+         <p>Review the rubric, complete the assignment, and mark this section as done to earn your certificate of completion.</p>`
+      ];
+      
+      return contents[sectionIdx];
+    }
+
     const SECTIONS = [
-      { title: 'Introduction', body: 'Overview of what you\'ll learn in this course and how to get the most out of it.' },
-      { title: 'Core concepts', body: 'The fundamental ideas you need to understand before moving forward.' },
-      { title: 'Hands-on practice', body: 'Apply what you\'ve learned with guided exercises and real-world examples.' },
-      { title: 'Advanced techniques', body: 'Take your skills further with more advanced patterns and approaches.' },
-      { title: 'Final project', body: 'Put everything together to build something you can be proud of.' },
+      { title: '1. Introduction & Setup' },
+      { title: '2. Core Concepts' },
+      { title: '3. Hands-on Practice' },
+      { title: '4. Advanced Techniques' },
+      { title: '5. Final Project' },
     ];
 
-    function renderSections(initialProgress) {
+    function renderSections(initialProgress, courseTitle) {
       const container = document.getElementById('sections');
       const preCompleted = Math.floor((initialProgress / 100) * SECTIONS.length);
 
       SECTIONS.forEach((s, i) => {
         const el = document.createElement('div');
         el.className = 'section' + (i < preCompleted ? ' done' : '');
+        // Open the first uncompleted section by default
+        if (i === preCompleted) el.classList.add('open');
+        
+        const contentHtml = generateContent(courseTitle, i);
+
         el.innerHTML =
           '<div class="section-header">' +
             '<span class="section-title">' + s.title + '</span>' +
             '<span class="section-check">' + (i < preCompleted ? '✓' : '') + '</span>' +
           '</div>' +
-          '<div class="section-body">' + s.body + '<br><br>' +
-            (i >= preCompleted ? '<button onclick="markDone(' + i + ')" style="margin-top:8px;background:#6366f1;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer">Mark complete</button>' : '') +
+          '<div class="section-body">' + contentHtml + 
+            (i >= preCompleted ? '<button class="btn-complete" onclick="markDone(' + i + ', event)">Complete Module</button>' : '') +
           '</div>';
+          
         if (i < preCompleted) completed.add(i);
-        el.addEventListener('click', function() { el.classList.toggle('open'); });
+        
+        el.querySelector('.section-header').addEventListener('click', function() { 
+          el.classList.toggle('open'); 
+        });
+        
         container.appendChild(el);
       });
     }
 
-    window.markDone = function(idx) {
+    window.markDone = function(idx, event) {
+      if (event) event.stopPropagation();
       if (completed.has(idx)) return;
+      
       completed.add(idx);
       var sections = document.querySelectorAll('.section');
       sections[idx].classList.add('done');
       sections[idx].querySelector('.section-check').textContent = '✓';
-      var btn = sections[idx].querySelector('button');
+      
+      var btn = sections[idx].querySelector('.btn-complete');
       if (btn) btn.remove();
+      
+      // Auto-open next section
+      if (idx + 1 < sections.length) {
+        sections[idx].classList.remove('open');
+        sections[idx + 1].classList.add('open');
+        sections[idx + 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      
       post({ type: 'SECTION_COMPLETE', sectionIdx: idx });
       updateProgress();
     };
@@ -124,14 +195,16 @@
     function updateProgress() {
       var pct = Math.round((completed.size / SECTIONS.length) * 100);
       document.getElementById('progress-fill').style.width = pct + '%';
-      document.getElementById('progress-label').textContent = 'Progress: ' + pct + '%';
+      document.getElementById('progress-label').textContent = pct + '%';
     }
 
     var lastPct = 0;
     window.addEventListener('scroll', function() {
       var el = document.documentElement;
-      var pct = Math.round((el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100);
-      if (Math.abs(pct - lastPct) >= 10) {
+      var scrollable = el.scrollHeight - el.clientHeight;
+      if (scrollable <= 0) return;
+      var pct = Math.round((el.scrollTop / scrollable) * 100);
+      if (Math.abs(pct - lastPct) >= 5) {
         lastPct = pct;
         post({ type: 'SCROLL_PROGRESS', percent: pct });
       }
@@ -141,10 +214,10 @@
       var c = window.__COURSE__;
       if (!c) return;
       document.getElementById('title').textContent = c.title || 'Course';
-      document.getElementById('desc').textContent = c.description || '';
-      document.getElementById('meta').textContent = 'By ' + (c.instructor || 'Unknown') + ' · ★ ' + (c.rating ? c.rating.toFixed(1) : '?');
+      document.getElementById('meta').textContent = 'Instructor: ' + (c.instructor || 'Unknown') + ' · Rating: ★ ' + (c.rating ? c.rating.toFixed(1) : '?');
       document.getElementById('category').textContent = c.category || 'Course';
-      renderSections(c.progress || 0);
+      
+      renderSections(c.progress || 0, c.title || 'Development');
       updateProgress();
       post({ type: 'READY' });
     });

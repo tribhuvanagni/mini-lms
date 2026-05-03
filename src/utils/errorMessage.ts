@@ -9,6 +9,7 @@ export function getErrorMessage(err: unknown): string {
       case 401: return 'Session expired. Please log in again.';
       case 403: return "You don't have permission to do that.";
       case 404: return 'Content not found.';
+      case 409: return 'Account with this email already exists.';
       case 429: return 'Too many requests. Wait a moment and retry.';
       case 500:
       case 502:

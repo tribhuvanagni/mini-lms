@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Mini LMS",
+    "name": "Mini LMS Mobile App",
     "slug": "mini-lms",
     "version": "1.0.0",
     "scheme": "minilms",
@@ -8,9 +8,9 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0f172a"
+      "image": "./assets/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#020617"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
@@ -30,7 +30,14 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Mini LMS to access your photos for profile picture."
+          "photosPermission": "Allow Mini LMS Mobile App to access your photos for profile picture."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#4F46E5"
         }
       ]
     ],

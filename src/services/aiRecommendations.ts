@@ -10,57 +10,80 @@ export interface Recommendation {
 
 const CACHE_PREFIX = 'ai_recs_';
 
+/**
+ * Get AI-powered course recommendations using Google Gemini (FREE tier).
+ *
+ * Free tier: 15 requests/min, 1M tokens/month — more than enough for a demo.
+ * Get your free key at: https://aistudio.google.com/apikey
+ */
 export async function getRecommendations(
   courseId: string,
   title: string,
   category: string
 ): Promise<Recommendation[]> {
-  if (!ENV.OPENAI_API_KEY) return [];
+  if (!ENV.GEMINI_API_KEY) return [];
 
   // check cache first
-  const cached = storage.get<Recommendation[]>(`${CACHE_PREFIX}${courseId}`);
+  const cached = await storage.get<Recommendation[]>(`${CACHE_PREFIX}${courseId}`);
   if (cached?.length) return cached;
 
   try {
     const { data } = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${ENV.GEMINI_API_KEY}`,
       {
-        model: 'gpt-3.5-turbo',
-        messages: [
+        contents: [
           {
-            role: 'system',
-            content:
-              'You are a course recommendation engine. Given a course title and category, suggest 3 related courses. Return a JSON array of objects with "title" and "reason" keys. Keep reasons under 15 words. Return ONLY the JSON array, no markdown.',
-          },
-          {
-            role: 'user',
-            content: `Course: ${title}, Category: ${category}`,
+            parts: [
+              {
+                text: `You are a course recommendation engine. Given a course title and category, suggest 3 related courses a student might enjoy.
+
+Course: ${title}
+Category: ${category}
+
+Return ONLY a JSON array of objects with "title" and "reason" keys. Keep reasons under 15 words. No markdown, no explanation, just the JSON array.
+
+Example format:
+[{"title":"Course Name","reason":"Short reason here"}]`,
+              },
+            ],
           },
         ],
-        temperature: 0.7,
-        max_tokens: 300,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 800,
+          responseMimeType: "application/json",
+        },
       },
       {
-        headers: {
-          Authorization: `Bearer ${ENV.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        timeout: 8_000,
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 10_000,
       }
     );
 
-    const content = data.choices?.[0]?.message?.content ?? '';
-    // strip markdown fences if the model wraps it
+    const content = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '[]';
+    // When responseMimeType is application/json, it returns raw JSON.
+    // We still strip markdown fences just in case the model ignores the instruction.
     const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const parsed = JSON.parse(cleaned) as Recommendation[];
+    
+    let parsed: Recommendation[] = [];
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch (parseError) {
+      logger.warn('Failed to parse AI response:', cleaned);
+      throw new Error('AI returned invalid format. Please try again.');
+    }
 
     if (Array.isArray(parsed) && parsed.length > 0) {
-      storage.set(`${CACHE_PREFIX}${courseId}`, parsed);
+      await storage.set(`${CACHE_PREFIX}${courseId}`, parsed);
       return parsed;
     }
     return [];
-  } catch (err) {
+  } catch (err: any) {
     logger.warn('AI recommendations failed:', err);
-    return [];
+    // Return the actual error message so we can see it on screen
+    return [{
+      title: "API Error Details",
+      reason: err?.response?.data?.error?.message || err?.message || String(err)
+    }];
   }
 }

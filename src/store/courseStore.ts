@@ -21,8 +21,9 @@ interface CourseActions {
   refreshCourses: () => Promise<void>;
   toggleBookmark: (id: string) => void;
   enroll: (id: string) => void;
+  unenroll: (id: string) => void;
   updateProgress: (id: string, progress: number) => void;
-  hydrate: () => void;
+  hydrate: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -37,14 +38,22 @@ export const useCourseStore = create<CourseState & CourseActions>((set, get) => 
   error: null,
   lastFetched: null,
 
-  hydrate: () => {
-    const cached = storage.get<Course[]>(STORAGE_KEYS.COURSES);
-    const bookmarkIds = storage.get<string[]>(STORAGE_KEYS.BOOKMARKS) ?? [];
-    const enrolledIds = storage.get<string[]>(STORAGE_KEYS.ENROLLED) ?? [];
+  hydrate: async () => {
+    let bSet = new Set<string>();
+    let eSet = new Set<string>();
+    
+    try {
+      const rawBookmarks = await storage.get<string[]>(STORAGE_KEYS.BOOKMARKS);
+      const rawEnrolled = await storage.get<string[]>(STORAGE_KEYS.ENROLLED);
+      if (Array.isArray(rawBookmarks)) bSet = new Set(rawBookmarks);
+      if (Array.isArray(rawEnrolled)) eSet = new Set(rawEnrolled);
+    } catch (e) {
+      // safe fallback
+    }
 
-    if (cached?.length) {
-      const bSet = new Set(bookmarkIds);
-      const eSet = new Set(enrolledIds);
+    const cached = await storage.get<Course[]>(STORAGE_KEYS.COURSES);
+
+    if (Array.isArray(cached) && cached.length > 0) {
       const hydrated = cached.map(c => ({
         ...c,
         isBookmarked: bSet.has(c.id),
@@ -85,7 +94,7 @@ export const useCourseStore = create<CourseState & CourseActions>((set, get) => 
         isEnrolled: enrolledIds.has(c.id),
       }));
 
-      storage.set(STORAGE_KEYS.COURSES, merged);
+      await storage.set(STORAGE_KEYS.COURSES, merged);
       set({ courses: merged, lastFetched: Date.now() });
     } catch (err) {
       set({ error: getErrorMessage(err) });
@@ -132,6 +141,21 @@ export const useCourseStore = create<CourseState & CourseActions>((set, get) => 
 
     const updated = courses.map(c =>
       c.id === id ? { ...c, isEnrolled: true, enrolledAt: new Date().toISOString() } : c
+    );
+
+    storage.set(STORAGE_KEYS.ENROLLED, Array.from(next));
+    set({ courses: updated, enrolledIds: next });
+  },
+
+  unenroll: (id) => {
+    const { enrolledIds, courses } = get();
+    if (!enrolledIds.has(id)) return;
+
+    const next = new Set(enrolledIds);
+    next.delete(id);
+
+    const updated = courses.map(c =>
+      c.id === id ? { ...c, isEnrolled: false, enrolledAt: undefined } : c
     );
 
     storage.set(STORAGE_KEYS.ENROLLED, Array.from(next));

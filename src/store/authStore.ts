@@ -36,7 +36,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
 
       const { data } = await authApi.currentUser();
       set({ user: data.data, isAuthenticated: true });
-      storage.set(STORAGE_KEYS.USER_PROFILE, data.data);
+      await storage.set(STORAGE_KEYS.USER_PROFILE, data.data);
     } catch (err) {
       logger.warn('hydrate failed:', getErrorMessage(err));
       await get().logout();
@@ -52,10 +52,26 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       const { user, accessToken, refreshToken } = data.data;
       await secureStorage.set(TOKEN_KEYS.ACCESS, accessToken);
       await secureStorage.set(TOKEN_KEYS.REFRESH, refreshToken);
-      storage.set(STORAGE_KEYS.USER_PROFILE, user);
+      await storage.set(STORAGE_KEYS.USER_PROFILE, user);
       set({ user, isAuthenticated: true });
-    } catch (err) {
-      set({ error: getErrorMessage(err) });
+    } catch (err: any) {
+      // Provide clear, context-specific login error messages
+      const status: number | undefined = err?.response?.status;
+      let message: string;
+      if (!err?.response) {
+        message = 'No internet connection. Check your network and try again.';
+      } else if (status === 401) {
+        message = 'Incorrect password. Please try again.';
+      } else if (status === 404) {
+        message = 'No account found with this email. Please create a new account.';
+      } else if (status === 400) {
+        message = 'Invalid email or password. Please check your details.';
+      } else if (status === 429) {
+        message = 'Too many attempts. Please wait a moment and try again.';
+      } else {
+        message = `Login failed (${status ?? 'unknown'}). Please try again.`;
+      }
+      set({ error: message });
       throw err;
     }
   },
@@ -80,7 +96,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     } finally {
       await secureStorage.remove(TOKEN_KEYS.ACCESS);
       await secureStorage.remove(TOKEN_KEYS.REFRESH);
-      storage.remove(STORAGE_KEYS.USER_PROFILE);
+      await storage.remove(STORAGE_KEYS.USER_PROFILE);
       set({ user: null, isAuthenticated: false, error: null });
     }
   },

@@ -2,6 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { ENV } from '@/constants/env';
 import { secureStorage, TOKEN_KEYS } from '@/services/secureStorage';
 import { logger } from '@/utils/logger';
+import { addBreadcrumb } from '@/services/sentry';
 
 let isRefreshing = false;
 // queue requests that come in while a refresh is in flight
@@ -33,6 +34,11 @@ apiClient.interceptors.response.use(
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     if (error.response?.status !== 401 || original._retry) {
+      addBreadcrumb(
+        `API error: ${error.response?.status ?? 'network'} ${original.url ?? ''}`,
+        'http',
+        'error',
+      );
       return Promise.reject(error);
     }
 

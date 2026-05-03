@@ -5,10 +5,10 @@ interface Props {
   width?: number | string;
   height?: number;
   borderRadius?: number;
-  className?: string;
+  style?: object;
 }
 
-export function Skeleton({ width = '100%', height = 20, borderRadius = 8, className = '' }: Props) {
+export function Skeleton({ width = '100%', height = 20, borderRadius = 8, style }: Props) {
   const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -24,20 +24,29 @@ export function Skeleton({ width = '100%', height = 20, borderRadius = 8, classN
 
   return (
     <Animated.View
-      style={{ width: width as number, height, borderRadius, opacity }}
-      className={`bg-surface-muted ${className}`}
+      style={[
+        { width: width as number, height, borderRadius, opacity, backgroundColor: '#334155' },
+        style
+      ]}
     />
   );
 }
 
 export function CourseCardSkeleton() {
   return (
-    <View className="flex-row p-4 bg-surface rounded-2xl mb-3 items-center">
-      <Skeleton width={80} height={80} borderRadius={12} />
-      <View className="flex-1 ml-3 gap-2">
-        <Skeleton height={16} width="80%" />
-        <Skeleton height={12} width="50%" />
-        <Skeleton height={12} width="30%" />
+    <View style={{ backgroundColor: '#1E293B', borderRadius: 20, marginBottom: 20, overflow: 'hidden' }}>
+      <Skeleton width="100%" height={180} borderRadius={0} />
+      <View style={{ padding: 16, gap: 12 }}>
+        <Skeleton height={20} width="85%" />
+        <Skeleton height={14} width="100%" />
+        <Skeleton height={14} width="60%" />
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Skeleton width={28} height={28} borderRadius={14} />
+            <Skeleton width={100} height={14} />
+          </View>
+          <Skeleton width={50} height={24} borderRadius={8} />
+        </View>
       </View>
     </View>
   );

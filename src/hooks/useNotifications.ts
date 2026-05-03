@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import * as Notifications from 'expo-notifications';
 import {
   setupNotificationChannel,
   scheduleInactivityReminder,
@@ -23,14 +22,10 @@ export function useNotifications() {
       appState.current = next;
     });
 
-    const notifSub = Notifications.addNotificationResponseReceivedListener(res => {
-      const data = res.notification.request.content.data;
-      logger.log('notification tapped:', data);
-    });
+      // Notifications listener removed to avoid static import crashes in Expo Go 53+
 
     return () => {
       sub.remove();
-      notifSub.remove();
     };
   }, []);
 }

@@ -1,26 +1,36 @@
-import { MMKV } from 'react-native-mmkv';
-
-const mmkv = new MMKV({ id: 'mini-lms-store' });
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // typed wrapper — everything is JSON-serialised
 export const storage = {
-  get<T>(key: string): T | null {
-    const raw = mmkv.getString(key);
-    if (!raw) return null;
+  async get<T>(key: string): Promise<T | null> {
     try {
+      const raw = await AsyncStorage.getItem(key);
+      if (!raw) return null;
       return JSON.parse(raw) as T;
     } catch {
       return null;
     }
   },
-  set<T>(key: string, value: T): void {
-    mmkv.set(key, JSON.stringify(value));
+  async set<T>(key: string, value: T): Promise<void> {
+    try {
+      await AsyncStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // ignore
+    }
   },
-  remove(key: string): void {
-    mmkv.delete(key);
+  async remove(key: string): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(key);
+    } catch {
+      // ignore
+    }
   },
-  clear(): void {
-    mmkv.clearAll();
+  async clear(): Promise<void> {
+    try {
+      await AsyncStorage.clear();
+    } catch {
+      // ignore
+    }
   },
 };
 

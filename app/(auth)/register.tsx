@@ -49,19 +49,19 @@ export default function Register() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-bgPrimary">
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F172A' }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
+        style={{ flex: 1 }}
       >
         <ScrollView
-          className="flex-1 px-6"
+          style={{ flex: 1, paddingHorizontal: 24 }}
           contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
           keyboardShouldPersistTaps="handled"
         >
-          <View className="mb-10">
-            <Text className="text-textPrimary text-3xl font-bold mb-2">Create account</Text>
-            <Text className="text-textSecondary text-base">Start your learning journey</Text>
+          <View style={{ marginBottom: 40 }}>
+            <Text style={{ color: '#F8FAFC', fontSize: 32, fontWeight: 'bold', marginBottom: 8 }}>Create account</Text>
+            <Text style={{ color: '#94A3B8', fontSize: 16 }}>Start your learning journey</Text>
           </View>
 
           <Controller
@@ -134,7 +134,7 @@ export default function Register() {
           />
 
           {error ? (
-            <Text className="text-danger text-sm mb-4 text-center">{error}</Text>
+            <Text style={{ color: '#EF4444', fontSize: 14, marginBottom: 16, textAlign: 'center' }}>{error}</Text>
           ) : null}
 
           <Button
@@ -144,7 +144,7 @@ export default function Register() {
             fullWidth
           />
 
-          <View className="mt-3">
+          <View style={{ marginTop: 12 }}>
             <Button
               label="Already have an account? Sign in"
               variant="ghost"

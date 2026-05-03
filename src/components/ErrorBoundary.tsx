@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { logger } from '@/utils/logger';
+import { captureException } from '@/services/sentry';
 
 interface State { hasError: boolean; message: string }
 
@@ -16,6 +17,7 @@ export class ErrorBoundary extends React.Component<
 
   componentDidCatch(err: Error, info: React.ErrorInfo) {
     logger.error('ErrorBoundary caught:', err, info);
+    captureException(err, { componentStack: info.componentStack ?? '' });
   }
 
   handleRestart = () => {

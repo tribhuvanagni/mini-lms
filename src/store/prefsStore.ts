@@ -9,7 +9,7 @@ interface Prefs {
 interface PrefsState extends Prefs {
   setTheme: (t: Prefs['theme']) => void;
   setNotificationsEnabled: (v: boolean) => void;
-  hydrate: () => void;
+  hydrate: () => Promise<void>;
 }
 
 const defaults: Prefs = { theme: 'system', notificationsEnabled: true };
@@ -17,8 +17,8 @@ const defaults: Prefs = { theme: 'system', notificationsEnabled: true };
 export const usePrefsStore = create<PrefsState>((set) => ({
   ...defaults,
 
-  hydrate: () => {
-    const saved = storage.get<Prefs>(STORAGE_KEYS.PREFS);
+  hydrate: async () => {
+    const saved = await storage.get<Prefs>(STORAGE_KEYS.PREFS);
     if (saved) set(saved);
   },
 
