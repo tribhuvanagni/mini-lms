@@ -1,4 +1,4 @@
-import { View, TextInput, Text } from 'react-native';
+import { View, TextInput, Text, StyleSheet } from 'react-native';
 import type { TextInputProps } from 'react-native';
 import { COLORS } from '@/constants/theme';
 
@@ -10,26 +10,67 @@ interface Props extends TextInputProps {
 
 export function Input({ label, error, hint, ...rest }: Props) {
   return (
-    <View className="mb-4">
+    <View style={styles.container}>
       {label ? (
-        <Text className="text-textSecondary text-sm mb-1 font-medium">{label}</Text>
+        <Text style={styles.label}>{label}</Text>
       ) : null}
-      <TextInput
-        {...rest}
-        className={[
-          'bg-surface rounded-xl px-4 py-3 text-textPrimary text-base',
-          'border',
-          error ? 'border-danger' : 'border-border',
-        ].join(' ')}
-        placeholderTextColor={COLORS.textMuted}
-        accessibilityLabel={label}
-        accessibilityHint={hint}
-      />
+      <View style={[
+        styles.inputContainer,
+        error ? styles.borderError : styles.borderNormal
+      ]}>
+        <TextInput
+          {...rest}
+          style={styles.input}
+          placeholderTextColor={COLORS.textMuted}
+          accessibilityLabel={label}
+          accessibilityHint={hint}
+        />
+      </View>
       {error ? (
-        <Text className="text-danger text-xs mt-1">{error}</Text>
+        <Text style={styles.errorText}>{error}</Text>
       ) : hint ? (
-        <Text className="text-textMuted text-xs mt-1">{hint}</Text>
+        <Text style={styles.hintText}>{hint}</Text>
       ) : null}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: 20,
+    width: '100%',
+  },
+  label: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    marginBottom: 6,
+    fontWeight: '500',
+  },
+  inputContainer: {
+    backgroundColor: COLORS.bgSurface,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  borderNormal: {
+    borderColor: COLORS.border,
+  },
+  borderError: {
+    borderColor: COLORS.danger,
+  },
+  input: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: COLORS.textPrimary,
+    fontSize: 16,
+  },
+  errorText: {
+    color: COLORS.danger,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  hintText: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    marginTop: 4,
+  },
+});

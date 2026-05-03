@@ -29,13 +29,20 @@ function AppContent() {
 
   useEffect(() => {
     async function load() {
-      // Initialize error tracking (silently no-ops in Expo Go)
-      await initSentry();
-      await hydratePrefs();
-      await hydrateCourses();
-      await hydrate();
-      setAppReady(true);
-      SplashScreen.hideAsync();
+      try {
+        await initSentry();
+        // Run hydration steps but don't let them block the app forever
+        await Promise.allSettled([
+          hydratePrefs(),
+          hydrateCourses(),
+          hydrate(),
+        ]);
+      } catch (err) {
+        console.error('Initialization error:', err);
+      } finally {
+        setAppReady(true);
+        SplashScreen.hideAsync();
+      }
     }
     load();
   }, []);

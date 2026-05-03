@@ -209,7 +209,7 @@ export default function Profile() {
           {/* Logout */}
           <Button
             label="Log out"
-            variant="danger"
+            variant="outline"
             onPress={handleLogout}
             fullWidth
           />

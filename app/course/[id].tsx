@@ -127,6 +127,7 @@ export default function CourseDetail() {
               {course.isEnrolled ? (
                  <Button
                  label="✓ Enrolled"
+                 onPress={() => {}}
                  disabled={true}
                  fullWidth
                />

@@ -32,14 +32,18 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     set({ isHydrating: true });
     try {
       const token = await secureStorage.get(TOKEN_KEYS.ACCESS);
-      if (!token) return;
-
-      const { data } = await authApi.currentUser();
-      set({ user: data.data, isAuthenticated: true });
-      await storage.set(STORAGE_KEYS.USER_PROFILE, data.data);
+      if (!token) {
+        set({ isAuthenticated: false, isHydrating: false });
+        return;
+      }
+      
+      // We have a token, assume authenticated for UI purposes
+      // and let subsequent API calls verify the token validity
+      const savedUser = await storage.get(STORAGE_KEYS.USER_PROFILE) as User | null;
+      set({ user: savedUser, isAuthenticated: !!savedUser });
     } catch (err) {
       logger.warn('hydrate failed:', getErrorMessage(err));
-      await get().logout();
+      set({ isAuthenticated: false });
     } finally {
       set({ isHydrating: false });
     }
