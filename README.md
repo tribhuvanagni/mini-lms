@@ -1,167 +1,261 @@
-# Mini LMS Mobile App
+# Mini LMS (Expo)
 
-A premium, production-ready Learning Management System built with React Native and Expo. This app allows users to seamlessly browse, bookmark, and enroll in high-quality software engineering courses, featuring an offline-first architecture and a deeply integrated webview experience.
+A small course-discovery app: sign in, browse a catalog, bookmark things, open a course detail page, and optionally read content in an embedded webview. We leaned on Expo so one codebase covers Android and iOS without maintaining two native projects.
 
-## Features
+## Project overview and screenshots
 
-- **Authentication**: Secure JWT-based login/register flow utilizing Expo SecureStore.
-- **Premium UI**: Udemy-inspired dark theme with responsive linear gradients, haptics, and fluid micro-interactions.
-- **Offline-First Course Catalog**: Uses AsyncStorage to cache fetched courses, allowing for browsing even without internet connectivity.
-- **Dynamic Content Webview**: Embedded bidirectional communication webview that generates tailored course content dynamically.
-- **Local Notifications**: Celebrates user milestones (5+ bookmarks) and issues 24-hour inactivity reminders using `expo-notifications`.
-- **High Performance**: Optimized catalog rendering using `@shopify/flash-list`.
+The home screen is a searchable catalog. Course pages show metadata, enroll/save actions, and AI-suggested “similar” picks at the bottom. Bookmarks and enrolled state persist on the device. If the network drops, you still see the last cached catalog (with a banner so it’s obvious you’re offline).
 
----
+**Screenshots**
 
-## 🛠 Tech Stack
+We don’t ship large PNGs in git by default. Drop a few exports here so teammates and reviewers can skim the UI without installing:
 
-The application leverages a modern, high-performance architecture, broken down by layer:
+`docs/screenshots/`
 
-### 📱 Frontend (Mobile App)
-- **React Native (v0.81.5)**: Core framework for cross-platform mobile UI development.
-- **Expo (SDK 54) & Expo Router**: Application build environment and file-based navigation system.
-- **NativeWind / TailwindCSS**: Utility-first CSS styling directly applied to React Native components.
-- **Zustand**: Fast, scalable state management for local UI states.
-- **React Native Reanimated**: High-performance, declarative 60FPS animations.
-- **@shopify/flash-list**: Highly optimized scrolling lists replacing standard FlatLists.
-
-### ⚙️ Backend & External APIs
-- **FreeAPI (`api.freeapi.app`)**: Acts as the primary backend providing mock data for authentication, user profiles, and the course catalog.
-- **Google Gemini API**: Integrated directly to power the intelligent, AI-driven course recommendation engine.
-- **Axios**: Promise-based HTTP client used to reliably communicate with all external backend services.
-- **Sentry**: Remote backend service for tracking errors and crash reporting.
-
-### 💾 Local Database & Storage
-- **React Native MMKV**: Ultra-fast synchronous key-value database used for caching the course catalog, enabling offline browsing.
-- **Expo SecureStore**: Encrypted local storage acting as a secure vault for JWT authentication tokens.
-- **AsyncStorage**: Fallback asynchronous storage for application preferences and metadata.
-
----
-
-## Setup Instructions
-
-1. **Clone the repository:**
-   ```bash
-   git clone <repository_url>
-   cd mini-lms
-   ```
-
-2. **Install Dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Start the Development Server:**
-   ```bash
-   npx expo start
-   ```
-
-4. **Run on Device / Emulator:**
-   - Press `a` for Android
-   - Press `i` for iOS
-   - Or scan the QR code using the Expo Go app on your physical device.
-
----
-
-## Environment Variables
-
-Create a `.env` file in the root directory and configure the base API URL:
-
-```env
-EXPO_PUBLIC_API_URL=https://api.freeapi.app/
-EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-*(Note: The app is configured to gracefully fallback if this is not provided, defaulting to FreeAPI).*
-
----
-
-## Key Architectural Decisions
-
-- **State Management (Zustand):** Chosen over Redux for its lightweight, boilerplate-free architecture. It easily wraps async hydration logic (fetching cached data from storage before mount).
-- **Zod & React Hook Form:** Ensures type-safe authentication payloads and displays validation errors instantly without hitting the server.
-- **Deterministic Data Mapping:** Since FreeAPI's `randomproducts` returns generic e-commerce items, the `courseMapper.ts` layer deterministically remaps these items into realistic IT/Software courses (e.g., Python, React Native, AI Agents) with Unsplash images.
-- **FlashList over FlatList:** Used for the main course catalog to guarantee 60fps scrolling performance, even when rendering hundreds of heavy image cards.
-
----
-
-## Known Issues / Limitations
-
-- **Theme Toggle constraints:** The app was explicitly designed around a premium "Deep Navy Dark Theme". While a theme preference toggle exists in the profile, the UI tokens are heavily optimized for dark mode.
-- **Image Cropping on Android:** The Expo Image Picker crop UI occasionally renders dark text on a dark background on specific Android devices. To bypass this confusing UX, `allowsEditing` has been set to false.
-- **Webview Scroll Physics:** The embedded webview has its own scroll context. Fast scrolling might feel slightly detached from the native wrapper, though progress tracking is fully synced.
-
----
+Suggested set (rename however you like):
 
 ## Screenshots
 
-*(See attached `artifacts` or GitHub release for full resolution screenshots)*
+### Loading
+![Loading](docs/Screenshots/loading_page%20(1).jpeg)
 
-- **Home Catalog:** `media__1777623134283.png`
-- **Course Detail & Webview:** `media__1777623383777.png`
-- **Bookmarks & Animations:** *(Not pictured, please test interactively)*
+### Register
+![Register](docs/Screenshots/Register_Page.jpeg)
+
+### Sign In
+![Sign](docs/Screenshots/Signin_Page.jpeg)
+
+### Home
+![Home](docs/Screenshots/Home_Page.jpeg)
+
+### Course
+![Course](docs/Screenshots/Course_Page.jpeg)
+
+### Bookmark
+![Bookmark](docs/Screenshots/Bookmarks_Page.jpeg)
+
+### Profile
+![Profile](docs/Screenshots/Profile_Page.jpeg)
 
 ---
 
-## Building the APK
+## Setup
 
-### Prerequisites
-- An [Expo account](https://expo.dev/signup) (free)
-- EAS CLI installed globally:
-  ```bash
-  npm install -g eas-cli
-  ```
+**Requirements:** Node 20+ (matches our CI), npm, and for device testing either Expo Go or a dev build.
 
-### Step 1 — Log in to Expo
 ```bash
+git clone <your-fork-or-repo-url>
+cd mini-lms
+npm install
+# If npm complains about peers (some Expo stacks do), try:
+# npm install --legacy-peer-deps
+```
+
+Copy env template and fill in what you need:
+
+```bash
+cp .env.example .env
+```
+
+Start Metro:
+
+```bash
+npx expo start
+```
+
+From there: press `a` for Android emulator, `i` for iOS simulator, or scan the QR code with Expo Go. Web is available with `w` if you want a quick smoke test (not the primary target).
+
+---
+
+## Environment variables
+
+Values prefixed with `EXPO_PUBLIC_` are inlined at bundle time. Don’t put secrets you wouldn’t paste into a client binary.
+
+| Variable | Required? | Purpose |
+|----------|-----------|---------|
+| `EXPO_PUBLIC_API_BASE_URL` | Has default | Base URL for the REST client (defaults to `https://api.freeapi.app`). |
+| `EXPO_PUBLIC_GEMINI_API_KEY` | Optional | Powers home + detail AI recommendations. Empty key = UI falls back gracefully. |
+| `EXPO_PUBLIC_SENTRY_DSN` | Optional | Reserved for real Sentry wiring; the app currently uses a small stub around crash reporting. |
+
+See **`.env.example`** in the repo root for a ready-to-copy template.
+
+**EAS builds:** If you use Expo Application Services, set the same variables in the EAS dashboard (or secrets) for the profile you build with. Our `eas.json` preview profile still references `EXPO_PUBLIC_API_URL` in one place while the app reads `EXPO_PUBLIC_API_BASE_URL` — keep both aligned or update `eas.json` to match so cloud builds don’t surprise you.
+
+---
+
+## Architecture (why we did it this way)
+
+**Expo Router + file-based routes** — Less boilerplate than hand-rolled stacks, and the folder structure doubles as documentation for where screens live.
+
+**Zustand for state** — Auth, courses, preferences, and recommendation cache are separate stores. We wanted something easier to read than Redux for a repo this size, with hydration from AsyncStorage where it matters.
+
+**AsyncStorage-backed catalog cache** — Courses are fetched from a public demo API, then cached locally so the app isn’t a brick on the train. Tokens go through **Expo SecureStore** instead of living in plain JSON.
+
+**Axios + interceptors** — One client, shared auth header, 401 refresh attempt, and breadcrumbs hooked into our logging layer.
+
+**React Hook Form + Zod on auth screens** — Validated forms before we hit the network; error messages stay on the fields where users expect them.
+
+**FlashList on the home feed** — Big lists with images get choppy fast on older phones. FlashList was the pragmatic choice over FlatList here.
+
+**Gemini for recommendations** — The brief mentioned OpenAI; we shipped **Google Generative AI** instead because keys and quotas were simpler for a demo. Prompts are grounded on the live course catalog so titles map back to real rows.
+
+**Notifications behind an Expo Go guard** — `expo-notifications` is picky in Expo Go on newer SDKs, so milestone and reminder code paths no-op there and run in dev/production builds.
+
+**“Analytics” without a third-party SDK** — Screen views and events append to AsyncStorage with a cap. Useful for demos and privacy-conscious reviewers; it’s not Amplitude or Firebase.
+
+---
+
+## Known issues and limitations
+
+The ones that matter most when you run, ship, or extend the app:
+
+- **Expo Go:** Local notifications (bookmark milestones, inactivity reminder) are not representative in Expo Go. Use a **development** or **preview** build to test them properly.
+- **Backend & offline:** The catalog comes from a **public demo API** and is **cached on device**. Offline = last good snapshot + banner; **bookmarks / enrollments are not synced** to a backend when you reconnect.
+- **Auth reset behavior (handled):** The demo backend can reset and return `Account not found` for previously created users. To prevent lockouts, the app now keeps a local account/session fallback and allows login from local data when remote auth records disappear.
+- **AI:** Recommendations need **`EXPO_PUBLIC_GEMINI_API_KEY`** and a working Gemini API; model or quota issues show up as **empty** home/detail suggestion blocks. The rest of the app still runs.
+- **EAS / env:** The app reads **`EXPO_PUBLIC_API_BASE_URL`**; `eas.json` preview still mentions **`EXPO_PUBLIC_API_URL`**. Set **`EXPO_PUBLIC_API_BASE_URL`** (and Gemini, if needed) in EAS secrets so cloud builds don’t silently point at the wrong host.
+- **Sentry:** `@sentry/react-native` is in the project, but **`src/services/sentry.ts` is still a stub**—wire real `Sentry.init` + DSN there when you want production crash reporting.
+
+---
+
+## Tests
+
+```bash
+npm test
+```
+
+Uses Jest with the `jest-expo` preset. `--passWithNoTests` is handy in CI if a branch only touches docs.
+
+Typecheck only (what we call `lint` in `package.json`):
+
+```bash
+npm run lint
+# → npx tsc --noEmit
+```
+
+---
+
+## Building an APK
+
+You’ll need an [Expo](https://expo.dev) account and the EAS CLI.
+
+```bash
+npm install -g eas-cli
 eas login
 ```
-Enter your Expo credentials when prompted.
 
-### Step 2 — Link the project to your Expo account
+Link the project if you haven’t:
+
 ```bash
 eas project:init
 ```
-This creates the project on Expo's build servers if it doesn't exist yet.
 
-### Step 3 — Build the Preview APK (recommended)
-This generates a standalone `.apk` file you can install directly on any Android device.
+**Preview APK** (installable `.apk`, good for sharing):
 
 ```bash
-eas build -p android --profile preview
+eas build -p android --profile preview --non-interactive
 ```
 
-> **Note:** The build happens in Expo's cloud. It takes approximately **5–15 minutes**. You do NOT need Android Studio installed.
+Builds run on Expo’s servers; grab the artifact link from the dashboard or the CLI output. On the phone you may need to allow installs from unknown sources.
 
-### Step 4 — Download and Install
-When the build finishes, EAS prints a download URL like:
-```
-✅ Build successful!  
-🤖 Download: https://expo.dev/artifacts/eas/xxxx.apk
-```
-Download the `.apk` file and transfer it to your Android device. Enable **"Install from unknown sources"** in Settings → Security if prompted.
+**AI in the APK:** `EXPO_PUBLIC_*` values are fixed at **build** time. A phone install has no `.env` file—add **`EXPO_PUBLIC_GEMINI_API_KEY`** (and `EXPO_PUBLIC_API_BASE_URL` if needed) under your project’s **EAS Secrets** / environment for the profile you build with, then run a **new** build. Otherwise AI sections stay empty but use normal user-facing copy.
 
----
-
-### Alternative: Development Build APK
-If you need a build that supports hot reloading (replacing Expo Go):
+**Development client** (if you want native modules + dev menu without Expo Go):
 
 ```bash
 eas build -p android --profile development
-```
-
-Then start the local dev server:
-```bash
 npx expo start --dev-client
 ```
 
+**Play Store–style release** in this repo targets an **Android App Bundle** (`production` profile in `eas.json`), not an APK.
+
 ---
 
-### Check Build Status
-```bash
-eas build:list
-```
+## Try the app (for reviewers)
 
-### View Logs
-Visit [https://expo.dev/accounts/[username]/projects/mini-lms/builds](https://expo.dev) to view build logs and download artefacts.
+**Live deployment link (Expo Update preview):**  
+[Open live preview in Expo Go](https://expo.dev/preview/update?message=Option+2%3A+preview+channel+publish&updateRuntimeVersion=1.0.0&createdAt=2026-05-03T12%3A23%3A22.579Z&slug=exp&projectId=83211a7f-9de3-440f-818e-047b83333a37&group=8c31b1ba-5216-4ff5-97e5-141867b2303f)
 
+### How reviewers run it
+
+1. Install **Expo Go**: [https://expo.dev/go](https://expo.dev/go)
+2. Open the deployment link above on mobile.
+3. It redirects to Expo Go and loads the project update.
+
+If the link opens a login page on desktop, open the same link on a phone with Expo Go installed.
+
+---
+
+## Technologies
+
+### Frontend (this repo — mobile app)
+
+| Area | What we use |
+|------|----------------|
+| **Runtime** | React 19, React Native 0.81, **Expo SDK 54** |
+| **Navigation** | **Expo Router** (file-based routes) |
+| **Language** | **TypeScript** |
+| **Styling** | **NativeWind** (Tailwind-style classes on RN primitives) |
+| **Global state** | **Zustand** (auth, courses, preferences, recommendation cache) |
+| **Forms & validation** | **React Hook Form**, **Zod**, **@hookform/resolvers** |
+| **Lists** | **@shopify/flash-list** (home catalog) |
+| **Images** | **expo-image** |
+| **Motion** | **react-native-reanimated** (in the toolchain); several screens also use React Native’s built-in `Animated` API |
+| **Gestures & shell** | react-native-gesture-handler, react-native-screens, react-native-safe-area-context |
+| **Embedded content** | **react-native-webview** (+ small JS bridge for the course HTML template) |
+| **HTTP** | **Axios** (shared client, auth + refresh interceptors) |
+| **AI (client-side calls)** | **@google/generative-ai** (Gemini) for recommendations |
+| **Notifications** | **expo-notifications** |
+| **Connectivity** | **@react-native-community/netinfo** (offline banner / behavior) |
+| **Other Expo modules** | expo-secure-store, expo-haptics, expo-linear-gradient, expo-image-picker, expo-constants, expo-updates, etc. |
+
+Web is supported in principle via Expo (`react-native-web`), but day-to-day development targets **Android and iOS**.
+
+### Backend (remote services — not shipped inside this repo)
+
+There is **no custom Node/Express (etc.) server in this repository**. The app talks to:
+
+| Role | Technology / host |
+|------|---------------------|
+| **REST API** | **FreeAPI** — `https://api.freeapi.app` by default (`EXPO_PUBLIC_API_BASE_URL`). Used for auth, user/profile-style data, and product listings that we **map into course objects** in the app. |
+| **Recommendations** | **Google Gemini** (HTTPS API) when `EXPO_PUBLIC_GEMINI_API_KEY` is set. |
+
+Swap the base URL or add your own BFF later; the client is just Axios + env.
+
+### Database & on-device storage
+
+There is **no Postgres/SQLite/Mongo instance** bundled with the app. Persistence is **client-side only**:
+
+| Layer | Technology |
+|-------|------------|
+| **Structured cache & prefs** | **@react-native-async-storage/async-storage** (JSON via a small `storage` helper — courses snapshot, bookmark IDs, prefs, local analytics queue, AI response cache metadata, etc.) |
+| **Secrets / tokens** | **expo-secure-store** (access + refresh tokens) |
+| **Fast native KV (optional)** | **react-native-mmkv** is in `package.json` for projects that want synchronous storage; the main typed wrapper today is AsyncStorage. |
+
+So: **frontend** = Expo/React Native app above; **backend** = external REST + optional Gemini; **“database”** = AsyncStorage + SecureStore on the device, not a server DB.
+
+---
+
+## Bonus / stretch items that actually landed
+
+- Typed auth forms (**React Hook Form + Zod**).
+- **Expo Notifications**: bookmark milestone nudge (every 5th save) and a 24h inactivity reminder (not in Expo Go).
+- **expo-image** on cards and key art (disk + memory caching).
+- **react-native-webview** with a small bridge for the course HTML template.
+- **FlashList** for the catalog.
+- **react-native-reanimated** is installed (Babel plugin too); list card motion mostly uses the built-in `Animated` API for now.
+- Local **analytics** service (no outbound telemetry by default).
+- **Jest** + **React Native Testing Library** with a starter test around `CourseCard`.
+- **AI recommendations** (Gemini) on home and course detail, with bookmark categories feeding interests.
+- **GitHub Actions** workflow: install, TypeScript check, tests; optional EAS APK on `main` when `EXPO_TOKEN` is configured.
+- Dark / light / system theme via preferences (palette updates as soon as you change the setting).
+
+---
+
+## Everything else
+
+- **API:** Course data and auth come from the **FreeAPI** demo host unless you point `EXPO_PUBLIC_API_BASE_URL` elsewhere.
+- **Offline banner:** Implemented in the root layout; NetInfo drives it.
+- **Odds and ends:** There are occasional scratch scripts in the repo root (`debug-models`, etc.) — safe to ignore for running the app; they’re not part of the production bundle.
+
+If something in this README drifts from the code, trust the source — and please open a PR to fix the doc.

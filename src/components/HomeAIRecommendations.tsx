@@ -6,6 +6,7 @@ import { getRecommendations, type Recommendation } from '@/services/aiRecommenda
 import { useCourseStore } from '@/store/courseStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { findCourseBySuggestedTitle } from '@/utils/courseMatch';
+import { aiRecommendationsUnavailableMessage } from '@/utils/aiUserMessages';
 
 const HOME_REC_SLOT_MS = 15 * 60 * 1000;
 
@@ -90,7 +91,7 @@ export function HomeAIRecommendations() {
         </View>
         <View style={{ backgroundColor: colors.card, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: colors.border }}>
           <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-            No recommendations available right now. Please check if your Gemini API Key is valid and restart the app.
+            {aiRecommendationsUnavailableMessage()}
           </Text>
         </View>
       </View>

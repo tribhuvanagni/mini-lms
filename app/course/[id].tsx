@@ -11,6 +11,7 @@ import { RecommendationCard } from '@/components/RecommendationCard';
 import { Skeleton } from '@/components/SkeletonLoader';
 import { useThemeColors, useIsDark } from '@/hooks/useThemeColors';
 import { findCourseBySuggestedTitle } from '@/utils/courseMatch';
+import { aiRecommendationsUnavailableMessage } from '@/utils/aiUserMessages';
 
 const FALLBACK_IMAGE = 'https://via.placeholder.com/600x400/1E293B/FFFFFF?text=Course';
 
@@ -182,8 +183,7 @@ export default function CourseDetail() {
                 </View>
               ) : !recs?.length ? (
                 <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20 }}>
-                  No suggestions yet. Set <Text style={{ fontWeight: '600' }}>EXPO_PUBLIC_GEMINI_API_KEY</Text> in{' '}
-                  <Text style={{ fontWeight: '600' }}>.env</Text> and reload, or try again later.
+                  {aiRecommendationsUnavailableMessage()}
                 </Text>
               ) : (
                 recs.map((rec, idx) => {

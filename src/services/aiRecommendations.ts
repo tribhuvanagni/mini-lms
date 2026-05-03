@@ -6,6 +6,7 @@ import type { Course } from '@/types/course';
 
 /** Try in order — API availability varies by key/region; first success wins. */
 const GEMINI_MODEL_CANDIDATES = [
+  'gemini-2.5-flash',
   'gemini-2.0-flash',
   'gemini-2.0-flash-001',
   'gemini-1.5-flash-002',
@@ -34,8 +35,8 @@ function normalizeInterestTags(input: string[] | string | undefined | null): str
 }
 
 function parseRecommendationList(text: string): Recommendation[] {
-  try {
-    const cleaned = text.replace(/```json|```/g, '').trim();
+  const normalize = (raw: string): Recommendation[] => {
+    const cleaned = raw.replace(/```json|```/g, '').trim();
     const data = JSON.parse(cleaned) as unknown;
     if (!Array.isArray(data)) return [];
     return data
@@ -49,9 +50,23 @@ function parseRecommendationList(text: string): Recommendation[] {
           typeof (item as Recommendation).reason === 'string'
       )
       .slice(0, 5);
-  } catch {
-    return [];
+  };
+
+  const chunks = [text];
+  const arrayMatch = text.match(/\[[\s\S]*\]/);
+  if (arrayMatch && arrayMatch[0] !== text) {
+    chunks.push(arrayMatch[0]);
   }
+
+  for (const chunk of chunks) {
+    try {
+      const out = normalize(chunk);
+      if (out.length) return out;
+    } catch {
+      continue;
+    }
+  }
+  return [];
 }
 
 async function generateTextFromGemini(
