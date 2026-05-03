@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getRecommendations, type Recommendation } from '@/services/aiRecommendations';
+import { getSimilarCourses, type Recommendation } from '@/services/aiRecommendations';
 
 interface RecommendationState {
   recommendations: Map<string, Recommendation[]>;
@@ -20,7 +20,7 @@ export const useRecommendationStore = create<RecommendationState>((set, get) => 
     set({ loading: nextLoading });
 
     try {
-      const recs = await getRecommendations(courseId, title, category);
+      const recs = await getSimilarCourses(courseId, title, category);
       const nextRecs = new Map(get().recommendations);
       if (recs.length) nextRecs.set(courseId, recs);
       set({ recommendations: nextRecs });
