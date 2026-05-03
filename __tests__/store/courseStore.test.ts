@@ -55,9 +55,13 @@ describe('courseStore', () => {
     expect(useCourseStore.getState().courses[0]!.progress).toBe(100);
   });
 
-  it('hydrates from cache', () => {
-    (storage.get as jest.Mock).mockReturnValueOnce([fakeCourse('1')]).mockReturnValueOnce(['1']).mockReturnValueOnce([]);
-    useCourseStore.getState().hydrate();
+  it('hydrates from cache', async () => {
+    // hydrate() reads: BOOKMARKS → ENROLLED → COURSES (must match this order)
+    (storage.get as jest.Mock)
+      .mockResolvedValueOnce(['1'])          // BOOKMARKS
+      .mockResolvedValueOnce([])             // ENROLLED
+      .mockResolvedValueOnce([fakeCourse('1')]); // COURSES
+    await useCourseStore.getState().hydrate();
     expect(useCourseStore.getState().courses[0]!.isBookmarked).toBe(true);
   });
 });
