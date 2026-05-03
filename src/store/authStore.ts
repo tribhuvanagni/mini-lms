@@ -16,7 +16,8 @@ const LOCAL_ACCOUNTS_KEY = 'local_accounts_v1';
 const LOCAL_SESSION_KEY = 'local_session_v1';
 
 async function getLocalAccounts(): Promise<LocalAccount[]> {
-  return (await storage.get<LocalAccount[]>(LOCAL_ACCOUNTS_KEY)) ?? [];
+  const raw = await storage.get<unknown>(LOCAL_ACCOUNTS_KEY);
+  return Array.isArray(raw) ? (raw as LocalAccount[]) : [];
 }
 
 async function upsertLocalAccount(account: LocalAccount): Promise<void> {
